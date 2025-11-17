@@ -25,9 +25,11 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen p-8">
-      <Header />
-      <SubjectSelector onSelectSubject={setSelectedSubject} />
+    <div className="min-h-screen p-4 sm:p-6 lg:p-8" style={{ background: 'var(--color-gray-50)' }}>
+      <div className="container-lg">
+        <Header />
+        <SubjectSelector onSelectSubject={setSelectedSubject} />
+      </div>
     </div>
   );
 }
@@ -38,29 +40,29 @@ function Header() {
   if (!progress) return null;
 
   return (
-    <div className="bg-white rounded-3xl shadow-xl p-6 mb-8">
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+    <div className="card mb-8 animate-slide-up">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
         <div>
-          <h1 className="text-4xl font-bold text-kid-blue">
-            Welcome back, {progress.name}! 👋
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-2">
+            Welcome back, {progress.name}!
           </h1>
-          <p className="text-xl text-gray-600 mt-2">
-            Ready for more learning adventures?
+          <p className="text-lg text-gray-600">
+            Ready to continue your learning adventure?
           </p>
         </div>
 
-        <div className="flex gap-6">
-          <div className="bg-gradient-to-br from-kid-yellow to-kid-orange rounded-2xl p-4 text-center min-w-[120px] shadow-lg">
-            <div className="text-3xl font-bold text-white">{progress.totalPoints}</div>
-            <div className="text-sm font-semibold text-white">⭐ Points</div>
+        <div className="flex flex-wrap gap-4 w-full lg:w-auto">
+          <div className="stat-card flex-1 lg:flex-none">
+            <div className="stat-value">{progress.totalPoints}</div>
+            <div className="stat-label">Points</div>
           </div>
-          <div className="bg-gradient-to-br from-kid-blue to-kid-purple rounded-2xl p-4 text-center min-w-[120px] shadow-lg">
-            <div className="text-3xl font-bold text-white">{progress.totalStars}</div>
-            <div className="text-sm font-semibold text-white">🌟 Stars</div>
+          <div className="stat-card flex-1 lg:flex-none">
+            <div className="stat-value">{progress.totalStars}</div>
+            <div className="stat-label">Stars</div>
           </div>
-          <div className="bg-gradient-to-br from-kid-pink to-kid-purple rounded-2xl p-4 text-center min-w-[120px] shadow-lg">
-            <div className="text-3xl font-bold text-white">{progress.currentStreak}</div>
-            <div className="text-sm font-semibold text-white">🔥 Day Streak</div>
+          <div className="stat-card flex-1 lg:flex-none">
+            <div className="stat-value">{progress.currentStreak}</div>
+            <div className="stat-label">Day Streak</div>
           </div>
         </div>
       </div>

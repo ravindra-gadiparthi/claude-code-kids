@@ -1,89 +1,93 @@
 'use client';
 
 import { Subject } from '../types';
+import { useProgress } from '../context/ProgressContext';
+import { badges } from '../data/badges';
 
 interface SubjectSelectorProps {
   onSelectSubject: (subject: Subject) => void;
 }
 
 export default function SubjectSelector({ onSelectSubject }: SubjectSelectorProps) {
+  const { progress } = useProgress();
+
   const subjects = [
     {
       id: 'math' as Subject,
-      name: 'Math Adventure',
+      name: 'Math',
       icon: '➕',
-      color: 'from-kid-blue to-kid-purple',
-      description: 'Count, add, and solve fun puzzles!',
+      description: 'Numbers, counting, and problem-solving',
+      className: 'subject-card-math',
     },
     {
       id: 'reading' as Subject,
-      name: 'Reading Quest',
+      name: 'Reading',
       icon: '📚',
-      color: 'from-kid-pink to-kid-orange',
-      description: 'Learn letters and words!',
+      description: 'Letters, words, and comprehension',
+      className: 'subject-card-reading',
     },
     {
       id: 'science' as Subject,
-      name: 'Science Explorer',
+      name: 'Science',
       icon: '🔬',
-      color: 'from-kid-green to-kid-blue',
-      description: 'Discover amazing facts!',
+      description: 'Discover the world around you',
+      className: 'subject-card-science',
     },
     {
       id: 'art' as Subject,
-      name: 'Creative Studio',
+      name: 'Art',
       icon: '🎨',
-      color: 'from-kid-yellow to-kid-pink',
-      description: 'Draw, color, and create!',
+      description: 'Colors, shapes, and creativity',
+      className: 'subject-card-art',
     },
   ];
 
-  return (
-    <div className="max-w-6xl mx-auto">
-      <h2 className="text-5xl font-bold text-white text-center mb-12">
-        Choose Your Adventure! 🚀
-      </h2>
+  const earnedBadges = progress?.badges || [];
+  const displayBadges = badges.filter(b => earnedBadges.includes(b.id)).slice(0, 4);
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {subjects.map((subject) => (
+  return (
+    <div className="space-y-8">
+      <div>
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
+          Choose a Subject
+        </h2>
+        <p className="text-gray-600">Pick what you'd like to learn today</p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        {subjects.map((subject, index) => (
           <button
             key={subject.id}
             onClick={() => onSelectSubject(subject.id)}
-            className={`bg-gradient-to-br ${subject.color} rounded-3xl p-8 shadow-2xl transform transition-all duration-300 hover:scale-105 hover:shadow-3xl active:scale-95`}
+            className={`subject-card ${subject.className} animate-slide-up`}
+            style={{ animationDelay: `${index * 100}ms` }}
+            aria-label={`Start ${subject.name} challenges`}
           >
-            <div className="text-8xl mb-4">{subject.icon}</div>
-            <h3 className="text-4xl font-bold text-white mb-3">{subject.name}</h3>
-            <p className="text-2xl text-white/90">{subject.description}</p>
+            <div className="text-5xl sm:text-6xl mb-4">{subject.icon}</div>
+            <h3 className="text-2xl sm:text-3xl font-bold mb-2">{subject.name}</h3>
+            <p className="text-sm sm:text-base opacity-90">{subject.description}</p>
           </button>
         ))}
       </div>
 
-      <div className="mt-12 bg-white/90 rounded-3xl p-8 shadow-xl">
-        <h3 className="text-3xl font-bold text-gray-800 mb-6 text-center">
-          🏆 Your Achievements
-        </h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <AchievementBadge icon="🎯" title="First Steps" locked={false} />
-          <AchievementBadge icon="🌟" title="Star Learner" locked={true} />
-          <AchievementBadge icon="🚀" title="Super Smart" locked={true} />
-          <AchievementBadge icon="👑" title="Learning Champion" locked={true} />
+      {displayBadges.length > 0 && (
+        <div className="card animate-fade-in">
+          <h3 className="text-xl font-bold text-gray-800 mb-4">
+            Your Badges
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {displayBadges.map((badge) => (
+              <div
+                key={badge.id}
+                className="bg-gradient-to-br from-yellow-100 to-orange-100 rounded-lg p-3 text-center"
+              >
+                <div className="text-3xl mb-1">{badge.icon}</div>
+                <div className="text-xs font-semibold text-gray-700">{badge.name}</div>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function AchievementBadge({ icon, title, locked }: { icon: string; title: string; locked: boolean }) {
-  return (
-    <div
-      className={`rounded-2xl p-4 text-center ${
-        locked ? 'bg-gray-200' : 'bg-gradient-to-br from-kid-yellow to-kid-orange'
-      }`}
-    >
-      <div className={`text-4xl mb-2 ${locked ? 'grayscale opacity-50' : ''}`}>{icon}</div>
-      <div className={`font-bold text-sm ${locked ? 'text-gray-500' : 'text-white'}`}>
-        {title}
-      </div>
+      )}
     </div>
   );
 }

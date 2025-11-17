@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Subject, Challenge } from '../types';
 import { useProgress } from '../context/ProgressContext';
 import { getChallengesBySubjectAndAge } from '../data/challenges';
+import { getRandomChallenges } from '../utils/challengeSelector';
 import { playSuccessSound, playEncouragementSound, playClickSound, playStarSound } from '../utils/sounds';
 
 interface ChallengeScreenProps {
@@ -18,9 +19,12 @@ export default function ChallengeScreen({ subject, onBack }: ChallengeScreenProp
   const [showResult, setShowResult] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
 
-  const challenges = progress
-    ? getChallengesBySubjectAndAge(subject, progress.ageGroup)
-    : [];
+  // Get all challenges for this subject/age and randomly select 10
+  const challenges = useMemo(() => {
+    if (!progress) return [];
+    const allChallenges = getChallengesBySubjectAndAge(subject, progress.ageGroup);
+    return getRandomChallenges(allChallenges, 10, progress.completedChallenges);
+  }, [subject, progress]);
 
   const currentChallenge = challenges[currentChallengeIndex];
 
@@ -30,15 +34,23 @@ export default function ChallengeScreen({ subject, onBack }: ChallengeScreenProp
     }
   }, []);
 
+  const subjectConfig = {
+    math: { gradient: 'linear-gradient(135deg, #667EEA 0%, #764BA2 100%)', icon: '➕', name: 'Math' },
+    reading: { gradient: 'linear-gradient(135deg, #F093FB 0%, #F5576C 100%)', icon: '📚', name: 'Reading' },
+    science: { gradient: 'linear-gradient(135deg, #4FACFE 0%, #00F2FE 100%)', icon: '🔬', name: 'Science' },
+    art: { gradient: 'linear-gradient(135deg, #FFD93D 0%, #FF6B9D 100%)', icon: '🎨', name: 'Art' },
+  }[subject];
+
   if (!currentChallenge) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-8">
-        <div className="bg-white rounded-3xl shadow-2xl p-12 max-w-2xl text-center">
-          <h2 className="text-5xl font-bold text-kid-blue mb-4">Great Job! 🎉</h2>
-          <p className="text-2xl text-gray-600 mb-8">
-            You've completed all the challenges in this section!
+      <div className="min-h-screen flex items-center justify-center p-4 sm:p-8" style={{ background: subjectConfig.gradient }}>
+        <div className="card max-w-2xl text-center animate-slide-up">
+          <div className="text-6xl mb-4">{subjectConfig.icon}</div>
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-4">Great Job!</h2>
+          <p className="text-lg text-gray-600 mb-8">
+            You've completed all 10 challenges! Ready to try again or pick another subject?
           </p>
-          <button onClick={onBack} className="kid-button bg-gradient-to-r from-kid-green to-kid-blue text-white">
+          <button onClick={onBack} className="btn btn-large btn-primary">
             Back to Subjects
           </button>
         </div>
@@ -74,128 +86,115 @@ export default function ChallengeScreen({ subject, onBack }: ChallengeScreenProp
     setCurrentChallengeIndex((prev) => prev + 1);
   };
 
-  const subjectColors = {
-    math: 'from-kid-blue to-kid-purple',
-    reading: 'from-kid-pink to-kid-orange',
-    science: 'from-kid-green to-kid-blue',
-    art: 'from-kid-yellow to-kid-pink',
-  };
-
-  const subjectIcons = {
-    math: '➕',
-    reading: '📚',
-    science: '🔬',
-    art: '🎨',
-  };
+  const progressPercent = Math.round(((currentChallengeIndex + 1) / challenges.length) * 100);
 
   return (
-    <div className="min-h-screen p-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen p-4 sm:p-6 lg:p-8" style={{ background: subjectConfig.gradient }}>
+      <div className="container-md">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-6">
           <button
             onClick={onBack}
-            className="bg-white text-gray-700 px-6 py-3 rounded-2xl font-bold text-lg shadow-lg hover:scale-105 transition-transform"
+            className="btn bg-white text-gray-700"
+            aria-label="Go back to subject selection"
           >
             ← Back
           </button>
-          <div className="bg-white rounded-2xl px-6 py-3 shadow-lg">
-            <span className="text-2xl font-bold text-gray-700">
+          <div className="stat-card">
+            <div className="text-lg font-bold text-gray-700">
               {currentChallengeIndex + 1} / {challenges.length}
-            </span>
+            </div>
           </div>
         </div>
 
         {/* Challenge Card */}
-        <div className={`bg-gradient-to-br ${subjectColors[subject]} rounded-3xl shadow-2xl p-8 mb-6`}>
-          <div className="bg-white rounded-2xl p-8">
-            <div className="text-center mb-6">
-              <div className="text-6xl mb-4">{subjectIcons[subject]}</div>
-              <h2 className="text-4xl font-bold text-gray-800 mb-2">
-                {currentChallenge.title}
-              </h2>
-              <p className="text-xl text-gray-600">{currentChallenge.description}</p>
-            </div>
+        <div className="card mb-6 animate-slide-up">
+          <div className="text-center mb-6">
+            <div className="text-5xl mb-3">{subjectConfig.icon}</div>
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
+              {currentChallenge.title}
+            </h2>
+            <p className="text-gray-600">{currentChallenge.description}</p>
+          </div>
 
-            {/* Question */}
-            <div className="bg-gradient-to-r from-kid-yellow/20 to-kid-pink/20 rounded-2xl p-8 mb-8">
-              <p className="text-3xl font-bold text-center text-gray-800">
-                {currentChallenge.question}
-              </p>
-            </div>
+          {/* Question */}
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 mb-6">
+            <p className="text-xl sm:text-2xl font-bold text-center text-gray-800">
+              {currentChallenge.question}
+            </p>
+          </div>
 
-            {/* Options */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              {currentChallenge.options?.map((option, index) => {
-                let buttonClass = 'bg-white border-4 border-gray-300 text-gray-800 hover:border-kid-blue hover:scale-105';
+          {/* Answer Options */}
+          <div className="answer-grid mb-6">
+            {currentChallenge.options?.map((option, index) => {
+              let className = 'answer-option';
 
-                if (showResult && option === currentChallenge.correctAnswer) {
-                  buttonClass = 'bg-kid-green text-white border-kid-green scale-105';
-                } else if (showResult && option === selectedAnswer && !isCorrect) {
-                  buttonClass = 'bg-red-500 text-white border-red-500';
-                } else if (selectedAnswer === option && !showResult) {
-                  buttonClass = 'bg-kid-blue text-white border-kid-blue scale-105';
-                }
+              if (showResult && option === currentChallenge.correctAnswer) {
+                className += ' correct';
+              } else if (showResult && option === selectedAnswer && !isCorrect) {
+                className += ' incorrect';
+              } else if (selectedAnswer === option && !showResult) {
+                className += ' selected';
+              }
 
-                return (
-                  <button
-                    key={index}
-                    onClick={() => handleAnswer(option)}
-                    disabled={showResult}
-                    className={`kid-button text-2xl p-6 ${buttonClass} disabled:cursor-not-allowed transition-all duration-300`}
-                  >
-                    {option}
-                  </button>
-                );
-              })}
-            </div>
+              return (
+                <button
+                  key={index}
+                  onClick={() => handleAnswer(option)}
+                  disabled={showResult}
+                  className={className}
+                  aria-label={`Option: ${option}`}
+                >
+                  {option}
+                </button>
+              );
+            })}
+          </div>
 
-            {/* Result Feedback */}
-            {showResult && (
-              <div className={`text-center p-6 rounded-2xl mb-6 ${
-                isCorrect ? 'bg-kid-green' : 'bg-red-400'
-              }`}>
-                <div className="text-6xl mb-3">{isCorrect ? '🎉' : '💪'}</div>
-                <p className="text-3xl font-bold text-white mb-2">
-                  {isCorrect ? 'Awesome! You got it!' : 'Good try! Keep going!'}
+          {/* Result Feedback */}
+          {showResult && (
+            <div className={`card mb-6 animate-slide-up ${
+              isCorrect ? 'bg-green-50 border-2 border-green-500' : 'bg-orange-50 border-2 border-orange-500'
+            }`}>
+              <div className="text-center">
+                <div className="text-5xl mb-3">{isCorrect ? '🎉' : '💪'}</div>
+                <p className="text-2xl font-bold text-gray-800 mb-2">
+                  {isCorrect ? 'Excellent! You got it!' : 'Good try! Keep going!'}
                 </p>
-                {isCorrect && (
-                  <p className="text-2xl text-white">
-                    +{currentChallenge.points} points! ⭐
+                {isCorrect ? (
+                  <p className="text-lg text-green-700">
+                    +{currentChallenge.points} points
                   </p>
-                )}
-                {!isCorrect && (
-                  <p className="text-2xl text-white">
-                    The correct answer is: {currentChallenge.correctAnswer}
+                ) : (
+                  <p className="text-lg text-gray-700">
+                    The correct answer is: <strong>{currentChallenge.correctAnswer}</strong>
                   </p>
                 )}
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Next Button */}
-            {showResult && (
-              <button
-                onClick={handleNext}
-                className="kid-button w-full bg-gradient-to-r from-kid-purple to-kid-blue text-white text-2xl pulse-glow"
-              >
-                Next Challenge! 🚀
-              </button>
-            )}
-          </div>
+          {/* Next Button */}
+          {showResult && (
+            <button
+              onClick={handleNext}
+              className="btn btn-large btn-success w-full"
+            >
+              {currentChallengeIndex + 1 < challenges.length ? 'Next Question →' : 'Finish'}
+            </button>
+          )}
         </div>
 
         {/* Progress Bar */}
-        <div className="bg-white rounded-2xl p-4 shadow-lg">
+        <div className="card">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-lg font-bold text-gray-700">Your Progress</span>
-            <span className="text-lg font-bold text-kid-blue">
-              {Math.round((currentChallengeIndex / challenges.length) * 100)}%
-            </span>
+            <span className="text-sm font-semibold text-gray-700">Progress</span>
+            <span className="text-sm font-bold text-blue-600">{progressPercent}%</span>
           </div>
-          <div className="bg-gray-200 rounded-full h-6 overflow-hidden">
+          <div className="progress-bar">
             <div
-              className="bg-gradient-to-r from-kid-green to-kid-blue h-full transition-all duration-500 ease-out"
-              style={{ width: `${(currentChallengeIndex / challenges.length) * 100}%` }}
+              className="progress-bar-fill"
+              style={{ width: `${progressPercent}%` }}
             />
           </div>
         </div>
