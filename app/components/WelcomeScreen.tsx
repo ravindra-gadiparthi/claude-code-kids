@@ -3,16 +3,33 @@
 import { useState } from 'react';
 import { AgeGroup, UserProgress } from '../types';
 import { useProgress } from '../context/ProgressContext';
+import { sanitizeName, isValidName } from '../utils/sanitize';
 
 export default function WelcomeScreen() {
   const [name, setName] = useState('');
   const [selectedAge, setSelectedAge] = useState<AgeGroup | null>(null);
+  const [nameError, setNameError] = useState('');
   const { setProgress } = useProgress();
 
+  const handleNameChange = (value: string) => {
+    const sanitized = sanitizeName(value);
+    setName(sanitized);
+
+    // Clear error when user starts typing
+    if (nameError) {
+      setNameError('');
+    }
+  };
+
   const handleStart = () => {
+    if (!isValidName(name)) {
+      setNameError('Please enter a valid name (at least 2 letters)');
+      return;
+    }
+
     if (name && selectedAge) {
       const newProgress: UserProgress = {
-        name,
+        name: sanitizeName(name),
         ageGroup: selectedAge,
         totalPoints: 0,
         totalStars: 0,
@@ -43,11 +60,23 @@ export default function WelcomeScreen() {
             <input
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => handleNameChange(e.target.value)}
               placeholder="Type your name here..."
-              className="w-full px-6 py-4 text-2xl border-4 border-kid-blue rounded-2xl focus:outline-none focus:border-kid-pink transition-colors"
+              className={`w-full px-6 py-4 text-2xl border-4 rounded-2xl focus:outline-none transition-colors ${
+                nameError
+                  ? 'border-red-500 focus:border-red-600'
+                  : 'border-kid-blue focus:border-kid-pink'
+              }`}
               maxLength={20}
+              aria-label="Enter your name"
+              aria-invalid={!!nameError}
+              aria-describedby={nameError ? 'name-error' : undefined}
             />
+            {nameError && (
+              <p id="name-error" className="text-red-500 text-lg mt-2 font-bold">
+                {nameError}
+              </p>
+            )}
           </div>
 
           <div>
@@ -73,12 +102,13 @@ export default function WelcomeScreen() {
 
           <button
             onClick={handleStart}
-            disabled={!name || !selectedAge}
+            disabled={!name || !selectedAge || !isValidName(name)}
             className={`kid-button w-full mt-8 ${
-              name && selectedAge
+              name && selectedAge && isValidName(name)
                 ? 'bg-gradient-to-r from-kid-green to-kid-blue text-white pulse-glow'
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
+            aria-label="Start learning"
           >
             Start Learning! 🎉
           </button>
